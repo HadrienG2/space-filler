@@ -9,7 +9,7 @@ pub type NumBits = u32;
 ///
 /// Ideally, this crate would be generic over this type, but `const fn`
 /// currently cannot handle this as const traits (and thus a version of
-/// `num-traits` that can be used in const fn) is not yet available.
+/// `num-traits` that can be used in const fn) are not yet available.
 ///
 pub type CurveIdx = u16;
 
@@ -17,7 +17,7 @@ pub type CurveIdx = u16;
 ///
 /// Ideally, this crate would be generic over this type, but `const fn`
 /// currently cannot handle this as const traits (and thus a version of
-/// `num-traits` that can be used in const fn) is not yet available.
+/// `num-traits` that can be used in const fn) are not yet available.
 ///
 pub type Coord = u8;
 
@@ -40,7 +40,7 @@ pub const fn num_bits<T>() -> NumBits {
 
 /// Generate a mask with bit pattern 0000...0011
 ///
-/// FIXME: Algorithm only supports power-of-two sizes at the moment
+/// FIXME: Current algorithm only supports power-of-two lengths.
 ///
 pub const fn low_order_mask(length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
@@ -63,7 +63,7 @@ pub const fn low_order_mask(length: NumBits) -> CurveIdx {
 
 /// Generate a mask with bit pattern 00110011...0011
 ///
-/// FIXME: Algorithm only supports power-of-two sizes at the moment
+/// FIXME: Current algorithm only supports power-of-two lengths.
 ///
 pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
