@@ -176,13 +176,13 @@ mod tests {
             for _bit_idx in 0..(bits::num_bits::<Coordinate>()) {
                 let high_order_bit = pop_bit(&mut input_buf);
                 let low_order_bit = pop_bit(&mut input_buf);
-                let mut x_bit = (high_order_bit ^ low_order_bit) ^ invert;
-                let mut y_bit = high_order_bit ^ invert;
+                let mut x_bit = high_order_bit ^ low_order_bit;
+                let mut y_bit = high_order_bit;
                 if swap {
                     core::mem::swap(&mut x_bit, &mut y_bit);
                 }
-                push_bit(&mut results[0], x_bit);
-                push_bit(&mut results[1], y_bit);
+                push_bit(&mut results[0], x_bit ^ invert);
+                push_bit(&mut results[1], y_bit ^ invert);
                 swap ^= !(high_order_bit ^ low_order_bit);
                 invert ^= high_order_bit & low_order_bit;
             }
