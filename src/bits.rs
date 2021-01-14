@@ -5,7 +5,7 @@ use crate::{Coordinate, CurveIdx, NumBits};
 /// Count the number of bits of an integer
 pub const fn num_bits<T>() -> NumBits {
     // TODO: Once assert in const is allowed, sanity check input
-    // assert!(core::mem::size_of<T>() <= u32::MAX as usize);
+    // assert!(core::mem::size_of<T>() <= NumBits::MAX as usize);
     (core::mem::size_of::<T>() * 8) as _
 }
 
