@@ -3,7 +3,7 @@
 //! I originally wrote this as a manual algorithm validation tool, and kept it
 //! around because I think it just looks cool :)
 
-use space_filler::hilbert;
+use space_filler::{hilbert, Coordinates2D, CurveIdx};
 
 // Display a Hilbert curve of specified order
 fn print_hilbert(order: u8) {
@@ -17,11 +17,11 @@ fn print_hilbert(order: u8) {
         .map(|idx| {
             // Here, we simulate a low-order curve from a higher-order one by
             // swapping coordinates when order is odd.
-            let [mut x, mut y] = hilbert::decode_2d(idx as _);
+            let [mut x, mut y] = hilbert::decode_2d(idx as CurveIdx);
             if order % 2 == 1 {
                 core::mem::swap(&mut x, &mut y);
             }
-            [x as _, y as _]
+            [x, y]
         })
         .collect::<Vec<_>>();
 
@@ -37,7 +37,7 @@ fn print_hilbert(order: u8) {
             }
         })
         .collect::<Vec<_>>();
-    let to_index = |coords: [u8; 2]| {
+    let to_index = |coords: Coordinates2D| {
         assert!(
             coords.iter().all(|&coord| (coord as usize) < coord_range),
             "Coordinates out of range: {:?} for range {}",
@@ -46,7 +46,7 @@ fn print_hilbert(order: u8) {
         );
         (coords[1] as usize) * (coord_range + 1) + (coords[0] as usize)
     };
-    let to_dir = |src: [u8; 2], dst: [u8; 2]| {
+    let to_dir = |src: Coordinates2D, dst: Coordinates2D| {
         [
             dst[0] as isize - src[0] as isize,
             dst[1] as isize - src[1] as isize,
