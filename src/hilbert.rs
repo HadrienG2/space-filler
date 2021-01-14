@@ -38,7 +38,7 @@ use crate::{bits, morton, Coordinates2D, CurveIdx};
 ///
 pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // TODO: Once assert in const is allowed, sanity check types
-    // debug_assert!(num_bits::<Coordinates2D>() >= num_bits::<CurveIdx>() / 2);
+    // debug_assert!(num_bits::<Coordinate>() >= num_bits::<CurveIdx>() / 2);
 
     // Here's the mathematical derivation of this algorithm.
     //

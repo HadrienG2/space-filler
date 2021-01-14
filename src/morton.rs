@@ -13,7 +13,7 @@ use crate::{bits, Coordinates2D, CurveIdx};
 ///
 pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // TODO: Once assert in const is allowed, sanity check types
-    // debug_assert!(num_bits::<Coordinates2D>() >= num_bits::<CurveIdx>() / 2);
+    // debug_assert!(num_bits::<Coordinate>() >= num_bits::<CurveIdx>() / 2);
 
     // Align the low-order bits of the two input sub-codes:
     // [ XX x1 XX x2 XX x3 XX x4 ... xN-1   XX xN ]
