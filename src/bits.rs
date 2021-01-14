@@ -26,6 +26,9 @@ pub const fn low_order_mask(length: NumBits) -> CurveIdx {
     let mut mask = 0b1;
     let mut curr_length = 1;
     while curr_length < length {
+        // Iteration 0: 00...00001
+        // Iteration 1: 00...00011
+        // Iteration 2: 00...01111
         mask |= mask << curr_length;
         curr_length *= 2;
     }
@@ -44,6 +47,9 @@ pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
     let mut stripes = low_order_mask(stripe_length);
     let mut curr_length = 2 * stripe_length;
     while curr_length < num_bits::<CurveIdx>() {
+        // Iteration 0: 00...00000000000000011
+        // Iteration 1: 00...00000000000110011
+        // Iteration 2: 00...00011001100110011
         stripes |= stripes << curr_length;
         curr_length *= 2;
     }
@@ -85,10 +91,10 @@ pub const fn bitwise_xor_ltr_exclusive_scan(bits: Coordinate) -> Coordinate {
 /// [ b1 b2 ... bN ], and a mask with bits [ m1 m2 ... mN ], this function
 /// produces two integers:
 ///
-/// - One whose bits are equal to ai where the corresponding mask bit is false
-///   and to bi where the corresponding mask bit is true.
+/// - One whose bits are equal to ai where the corresponding mask bit mi is
+///   false and to bi where mi is true.
 /// - One whose bits are conversely equal to bi where the corresponding mask
-///   bit is false and to ai where the corresponding mask bit is true.
+///   bit mi is false and to ai where mi is true.
 ///
 pub const fn bitwise_swaps(
     swap_mask: Coordinate,
