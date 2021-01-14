@@ -191,8 +191,8 @@ pub const fn decode_morton_2d(code: CurveIdx) -> Coordinates2D {
 /// Compared to the Morton curve, the Hilbert curve never jumps across space, it
 /// always moves from one point of space to one of its direct neighbors. The
 /// price to pay for this superior spatial locality is that it follows a more
-/// complex geometrical pattern (that, transitively, requires more complex
-/// computations), based on recursively rotated and flipped C-like shapes.
+/// complex geometrical pattern (that, logically, requires more complex
+/// computations), based on recursively flipped C-like shapes.
 ///
 /// There are technically 4 C-like shapes that one could start from. Here we use
 /// a vertically flipped C shape (]) instead of the U shape that is more
@@ -237,14 +237,14 @@ pub const fn decode_hilbert_2d(code: CurveIdx) -> Coordinates2D {
     // * On iteration 2, (x, y) is (1, 1)
     // * On iteration 3, (x, y) is (0, 1)
     //
-    // If the iteration number in binary is ij, this means that we have...
+    // So if we denote ij the binary digits of the iteration number, we have...
     //
     // * x = i XOR j
     // * y = i
     //
     // ...which happens to be the Gray code associated with the 2D Morton code
-    // yx, which is totally not a coincidence (it simplifies extension to higher
-    // dimensions, where both the Gray and Morton code are defined).
+    // yx. This is totally not a coincidence, it simplifies extension to higher
+    // dimensions, where both the Gray and Morton code are defined...
     //
     // Now, if we were to turn this basic shape into a fractal without extra
     // precautions, we would still get jumps from some sub-patterns to the next:
@@ -272,9 +272,9 @@ pub const fn decode_hilbert_2d(code: CurveIdx) -> Coordinates2D {
     //
     // Let's translate those transformations into binary arithmetic:
     //
-    // - If i XOR j is 0, we need to flip the coordinates of our sub-pattern
-    // - If i AND j is 1, we need to invert the coordinates of our sub-pattern
-    //   * In binary, this can be done by NOT-ing x and y when i AND j is 1...
+    // - If (i XOR j) is 0, we need to flip the coordinates of our sub-pattern
+    // - If (i AND j) is 1, we need to invert the coordinates of our sub-pattern
+    //   * In binary, this can be done by NOT-ing x and y when (i AND j) is 1...
     //   * ...which we can do without testing the value of i and j by XORing x
     //     and y with (i AND j).
     //
@@ -296,9 +296,10 @@ pub const fn decode_hilbert_2d(code: CurveIdx) -> Coordinates2D {
     // and inverting coordinates twice gives back the original coordinates.
     //
     // Therefore, if for every level of recursion, we can compute a bit b that
-    // controls whether a certain transform is applied, the truth that we need
-    // to apply that transform at a given recursion depth is given by the XOR of
-    // that bit at all previous recursion depths.
+    // controls whether a certain transform is applied when going to the next
+    // level of recursion, the truth that we need to apply that transform at a
+    // given recursion depth is given by the XOR of those control bits at all
+    // previous recursion depths.
     //
     // ---
     //
@@ -321,20 +322,20 @@ pub const fn decode_hilbert_2d(code: CurveIdx) -> Coordinates2D {
     let not_xor_bits = !(xor_bits); // Controls coordinate flipping
 
     // Then we can compute whether coordinates should be flipped or inverted
-    // at every depth by computing the XOR of the flipping/conversion bits at
-    // every previous depth. This is most efficiently done by using a bitwise
-    // version of the parallel scan algorithm.
+    // at every depth by computing the XOR of the recursive flipping/conversion
+    // bits at every previous depth. This is most efficiently done by using a
+    // bitwise version of the parallel scan algorithm.
     //
-    let swap_control_bits = bitwise_xor_ltr_exclusive_scan(not_xor_bits);
-    let not_control_bits = bitwise_xor_ltr_exclusive_scan(and_bits);
+    let coord_swap_bits = bitwise_xor_ltr_exclusive_scan(not_xor_bits);
+    let coord_not_bits = bitwise_xor_ltr_exclusive_scan(and_bits);
 
     // Finally, we start from the top-level Gray code coordinates, transform
     // every bit through coordinate flipping and inversion as appropriate, and
     // we get integer words whose bits are the coordinate on the Hilbert curve
     // at increasing recursion depths, which is what we want.
     //
-    let [coord1, coord2] = bitwise_swaps(swap_control_bits, xor_bits, high_order);
-    [coord1 ^ not_control_bits, coord2 ^ not_control_bits]
+    let [coord1, coord2] = bitwise_swaps(coord_swap_bits, xor_bits, high_order);
+    [coord1 ^ coord_not_bits, coord2 ^ coord_not_bits]
 }
 
 // TODO: Study if there's a faster way to iterate over the 2D Hilbert curve than
@@ -342,7 +343,7 @@ pub const fn decode_hilbert_2d(code: CurveIdx) -> Coordinates2D {
 
 // ---
 
-// TODO: Restructure this into submodules
+// TODO: Restructure this crate into modules
 
 // TODO: Add benchmarks
 
