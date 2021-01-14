@@ -74,7 +74,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // <┘<┘
     //
     // To avoid this, we need to transform the sub-patterns, which we can do
-    // without changing the curve's endpoints by flipping the coordinates of
+    // without changing the curve's endpoints by swapping the coordinates of
     // sub-pattern 0...
     //
     // 0┌1┐
@@ -82,7 +82,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // 3┐2┐
     // <┘<┘
     //
-    // ...and flipping and inverting the coordinates of sub-pattern 3:
+    // ...and swapping and inverting the coordinates of sub-pattern 3:
     //
     // 0┌1┐
     // └┘┌┘
@@ -91,7 +91,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     //
     // Let's translate those transformations into binary arithmetic:
     //
-    // - If (i XOR j) is 0, we need to flip the coordinates of our sub-pattern
+    // - If (i XOR j) is 0, we need to swap the coordinates of our sub-pattern
     // - If (i AND j) is 1, we need to invert the coordinates of our sub-pattern
     //   * In binary, this can be done by NOT-ing x and y when (i AND j) is 1...
     //   * ...which we can do without testing the value of i and j by XORing x
@@ -111,7 +111,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // <┘└3┘└─┘
     //
     // It so happens, however, that the transforms applied above are their own
-    // inverse: flipping coordinates twice gives back the original coordinates,
+    // inverse: swapping coordinates twice gives back the original coordinates,
     // and inverting coordinates twice gives back the original coordinates.
     //
     // Therefore, if for every level of recursion, we can compute a bit b that
@@ -138,10 +138,10 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     //
     let and_bits = low_order & high_order; // Controls coordinate inversion
     let xor_bits = low_order ^ high_order; // Basic pattern's x coordinate
-    let not_xor_bits = !(xor_bits); // Controls coordinate flipping
+    let not_xor_bits = !(xor_bits); // Controls coordinate swapping
 
-    // Then we can compute whether coordinates should be flipped or inverted
-    // at every depth by computing the XOR of the recursive flipping/conversion
+    // Then we can compute whether coordinates should be swapped or inverted
+    // at every depth by computing the XOR of the recursive swapping/conversion
     // bits at every previous depth. This is most efficiently done by using a
     // bitwise version of the parallel scan algorithm.
     //
@@ -149,7 +149,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     let coord_not_bits = bits::bitwise_xor_ltr_exclusive_scan(and_bits);
 
     // Finally, we start from the top-level Gray code coordinates, transform
-    // every bit through coordinate flipping and inversion as appropriate, and
+    // every bit through coordinate swapping and inversion as appropriate, and
     // we get integer words whose bits are the coordinate on the Hilbert curve
     // at increasing recursion depths, which is what we want.
     //
