@@ -354,16 +354,16 @@ mod tests {
     use num_traits::{PrimInt, Unsigned};
     use quickcheck::quickcheck;
 
-    fn push_bit<I: PrimInt + Unsigned>(target: &mut I, bit: I) {
-        assert!(bit & I::one() == bit);
+    fn push_bit<I: PrimInt + Unsigned>(target: &mut I, bit: bool) {
+        let bit = if bit { I::one() } else { I::zero() };
         *target = (*target << 1) | bit
     }
 
-    fn peek_bit<I: PrimInt + Unsigned>(target: I) -> I {
-        target & I::one()
+    fn peek_bit<I: PrimInt + Unsigned>(target: I) -> bool {
+        (target & I::one()) == I::one()
     }
 
-    fn pop_bit<I: PrimInt + Unsigned + ShrAssign<NumBits>>(target: &mut I) -> I {
+    fn pop_bit<I: PrimInt + Unsigned + ShrAssign<NumBits>>(target: &mut I) -> bool {
         let res = peek_bit(*target);
         *target >>= 1;
         res
@@ -410,7 +410,7 @@ mod tests {
             assert_eq!(
                 super::bitwise_xor_ltr_inclusive_scan(input),
                 result,
-                "Unexpected inclusive scan result for input {}",
+                "Unexpected inclusive scan result for input {:08b}",
                 input
             );
         }
@@ -422,7 +422,7 @@ mod tests {
             assert_eq!(
                 super::bitwise_xor_ltr_exclusive_scan(input),
                 super::bitwise_xor_ltr_inclusive_scan(input) >> 1,
-                "Unexpected exclusive scan result for input {}",
+                "Unexpected exclusive scan result for input {:08b}",
                 input
             );
         }
@@ -457,18 +457,17 @@ mod tests {
         // parameters, we perform the following check:
         fn test(mask: Coordinate, src1: Coordinate, src2: Coordinate) {
             let [mut mask_buf, mut src1_buf, mut src2_buf] = [mask, src1, src2];
-            let mut results = [0; 2];
+            let mut results = [0 as Coordinate; 2];
             for _bit_idx in 0..(super::super::num_bits::<Coordinate>()) {
                 match pop_bit(&mut mask_buf) {
-                    0 => {
+                    false => {
                         push_bit(&mut results[0], pop_bit(&mut src1_buf));
                         push_bit(&mut results[1], pop_bit(&mut src2_buf));
                     }
-                    1 => {
+                    true => {
                         push_bit(&mut results[0], pop_bit(&mut src2_buf));
                         push_bit(&mut results[1], pop_bit(&mut src1_buf));
                     }
-                    _ => unreachable!(),
                 }
             }
             for result in &mut results {
@@ -477,7 +476,7 @@ mod tests {
             assert_eq!(
                 super::super::bitwise_swaps(mask, src1, src2),
                 results,
-                "Unexpected bitwise swap result for src1={}, src2={}, mask={}",
+                "Unexpected bitwise swap result for src1={:08b}, src2={:08b}, mask={:08b}",
                 src1,
                 src2,
                 mask
@@ -489,10 +488,10 @@ mod tests {
     fn decode_morton_2d() {
         for input in 0..=CurveIdx::MAX {
             let mut input_buf = input;
-            let mut results = [0; 2];
+            let mut results = [0 as Coordinate; 2];
             for _bit_idx in 0..(super::num_bits::<Coordinate>()) {
                 for result in &mut results {
-                    push_bit(result, pop_bit(&mut input_buf) as Coordinate);
+                    push_bit(result, pop_bit(&mut input_buf));
                 }
             }
             for result in &mut results {
@@ -501,11 +500,38 @@ mod tests {
             assert_eq!(
                 super::decode_morton_2d(input),
                 results,
-                "Unexpected 2D Morton code decoding result for input {}",
+                "Unexpected 2D Morton code decoding result for input {:08b}",
                 input
             );
         }
     }
 
-    // TODO: Add Hilbert curve tests
+    #[test]
+    fn decode_hilbert_2d() {
+        for input in 0..=CurveIdx::MAX {
+            let mut input_buf = input.reverse_bits();
+            let mut results = [0; 2];
+            let mut swap = false;
+            let mut invert = false;
+            for _bit_idx in 0..(super::num_bits::<Coordinate>()) {
+                let high_order_bit = pop_bit(&mut input_buf);
+                let low_order_bit = pop_bit(&mut input_buf);
+                let mut x_bit = (high_order_bit ^ low_order_bit) ^ invert;
+                let mut y_bit = high_order_bit ^ invert;
+                if swap {
+                    core::mem::swap(&mut x_bit, &mut y_bit);
+                }
+                push_bit(&mut results[0], x_bit);
+                push_bit(&mut results[1], y_bit);
+                swap ^= !(high_order_bit ^ low_order_bit);
+                invert ^= high_order_bit & low_order_bit;
+            }
+            assert_eq!(
+                super::decode_hilbert_2d(input),
+                results,
+                "Unexpected 2D Hilbert code decoding result for input {:08b}",
+                input
+            );
+        }
+    }
 }
