@@ -64,15 +64,12 @@ mod tests {
     #[test]
     fn decode_2d() {
         for input in 0..=CurveIdx::MAX {
-            let mut input_buf = input;
+            let mut input_buf = input.reverse_bits();
             let mut results = [0 as Coordinate; 2];
             for _bit_idx in 0..(bits::num_bits::<Coordinate>()) {
-                for result in &mut results {
+                for result in results.iter_mut().rev() {
                     push_bit(result, pop_bit(&mut input_buf));
                 }
-            }
-            for result in &mut results {
-                *result = result.reverse_bits();
             }
             assert_eq!(
                 super::decode_2d(input),
