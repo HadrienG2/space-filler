@@ -3,6 +3,7 @@
 use crate::{Coordinate, CurveIdx, NumBits};
 
 /// Count the number of bits of an integer
+#[inline(always)]
 pub const fn num_bits<T>() -> NumBits {
     // TODO: Once assert in const is allowed, sanity check input
     // assert!(core::mem::size_of<T>() <= NumBits::MAX as usize);
@@ -13,6 +14,7 @@ pub const fn num_bits<T>() -> NumBits {
 ///
 /// FIXME: Current algorithm only supports power-of-two lengths.
 ///
+#[inline(always)]
 pub const fn low_order_mask(length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
     // assert!(length.is_power_of_two() && length <= num_bits::<CurveIdx>());
@@ -39,6 +41,7 @@ pub const fn low_order_mask(length: NumBits) -> CurveIdx {
 ///
 /// FIXME: Current algorithm only supports power-of-two lengths.
 ///
+#[inline(always)]
 pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
     // assert!(length != 0 && length.is_power_of_two() && length < num_bits::<CurveIdx>());
@@ -61,6 +64,7 @@ pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
 /// Given an integer with bits [ x1 x2 x3 ... ], this produces another integer
 /// with bits [ x1  x1+x2  x1+x2+x3 ... ].
 ///
+#[inline(always)]
 pub const fn bitwise_xor_ltr_inclusive_scan(mut bits: Coordinate) -> Coordinate {
     // This is a bitwise implementation of the Hillis/Steele parallel inclusive
     // scan algorithm. It can be trivially generalized to right-to-left scans or
@@ -81,6 +85,7 @@ pub const fn bitwise_xor_ltr_inclusive_scan(mut bits: Coordinate) -> Coordinate 
 /// Given an integer with bits [ x1 x2 x3 ... ], this produces another integer
 /// with bits [ 0 x1 x1+x2 ... ].
 ///
+#[inline(always)]
 pub const fn bitwise_xor_ltr_exclusive_scan(bits: Coordinate) -> Coordinate {
     bitwise_xor_ltr_inclusive_scan(bits >> 1)
 }
@@ -96,6 +101,7 @@ pub const fn bitwise_xor_ltr_exclusive_scan(bits: Coordinate) -> Coordinate {
 /// - One whose bits are conversely equal to bi where the corresponding mask
 ///   bit mi is false and to ai where mi is true.
 ///
+#[inline(always)]
 pub const fn bitwise_swaps(
     swap_mask: Coordinate,
     src1: Coordinate,
