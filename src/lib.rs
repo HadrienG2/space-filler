@@ -32,5 +32,3 @@ pub type Coordinate = u8;
 /// have not carried out yet as I haven't needed them so far.
 ///
 pub type Coordinates2D = [u8; 2];
-
-// TODO: Add benchmarks
