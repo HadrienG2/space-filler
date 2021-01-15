@@ -1,6 +1,6 @@
 //! Utilities related to the Morton space-filling curve
 
-use crate::{bits, Coordinates2D, CurveIdx};
+use crate::{bits, Coordinate, Coordinates2D, CurveIdx};
 
 /// Decode an 2-dimensional Morton code into its two inner indices
 ///
@@ -52,8 +52,47 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     [sub_codes[0] as _, sub_codes[1] as _]
 }
 
-// TODO: Study if there's a faster way to iterate over the 2D morton curve than
-//       by repeatedly decoding increasing Morton curve indices
+/// Iterate over the 2D Morton curve
+///
+/// This is equivalent to running `decode_2d()` on the sequence of all possible
+/// curve indices (CurveIdx::MIN..=CurveIdx), but a bit more efficient.
+///
+pub fn iter_2d() -> impl Iterator<Item = Coordinates2D> {
+    iter_from_2d(CurveIdx::MIN)
+}
+
+/// Iterate over the 2D Morton curve, starting from a certain index
+///
+/// This is equivalent to running `decode_2d()` on the sequence of curve
+/// indices (start..=CurveIdx), but should be a bit more efficient.
+///
+pub fn iter_from_2d(start: CurveIdx) -> impl Iterator<Item = Coordinates2D> {
+    let mut coords = decode_2d(start);
+    (start..=CurveIdx::MAX).map(move |idx| {
+        // We'll return the current coordinates after preparing the next ones
+        let result = coords;
+
+        // In binary, incrementing an integer flips a row of low-order bits.
+        // Check which of the curve index's bits will be flipped next time.
+        let flipped_bits = idx ^ idx.wrapping_add(1);
+        let num_flipped_bits = flipped_bits.trailing_ones();
+
+        // The flipped bits will be spread out ~evenly across "even" bits (which
+        // represent the second coordinate of the Morton code) and "odd" bits
+        // (which represent the first coordinate), with the extra flipped bit
+        // going to the first coordinate when a tie occurs.
+        let num_flipped_even = num_flipped_bits / 2;
+        let num_flipped_odd = num_flipped_bits - num_flipped_even;
+
+        // From this we can propagate the bit-flipping changes of the index
+        // increment to the Morton indices without redoing Morton code decoding.
+        coords[0] ^= (flipped_bits >> num_flipped_even) as Coordinate;
+        coords[1] ^= (flipped_bits >> num_flipped_odd) as Coordinate;
+
+        // And then we return the current coordinates
+        result
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -63,7 +102,7 @@ mod tests {
 
     #[test]
     fn decode_2d() {
-        for input in 0..=CurveIdx::MAX {
+        for input in CurveIdx::MIN..=CurveIdx::MAX {
             let mut input_buf = input.reverse_bits();
             let mut results = [0 as Coordinate; 2];
             for _bit_idx in 0..(bits::num_bits::<Coordinate>()) {
@@ -78,5 +117,45 @@ mod tests {
                 input
             );
         }
+    }
+
+    mod iter_from_2d {
+        use super::*;
+        use quickcheck::quickcheck;
+
+        // This test really takes a long while to run in debug mode...
+        #[test]
+        #[ignore]
+        fn exhaustive() {
+            for start in CurveIdx::MIN..=CurveIdx::MAX {
+                test(super::super::iter_from_2d(start), start);
+            }
+        }
+
+        // ...instead, random testing should be good enough for most purposes
+        quickcheck! {
+            fn quick(start: CurveIdx) -> bool {
+                test(super::super::iter_from_2d(start), start);
+                true
+            }
+        }
+
+        // Whichever way you probe the parameter space, for each set of
+        // parameters, we perform the following check:
+        pub fn test(iter: impl Iterator<Item = Coordinates2D>, start: CurveIdx) {
+            for (iter, (coords, idx)) in iter.zip(start..=CurveIdx::MAX).enumerate() {
+                assert_eq!(
+                    coords,
+                    super::super::decode_2d(idx),
+                    "Unexpected 2D Morton code iterator output at iteration {}",
+                    iter
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn iter_2d() {
+        iter_from_2d::test(super::iter_2d(), CurveIdx::MIN);
     }
 }

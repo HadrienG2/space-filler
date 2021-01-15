@@ -20,6 +20,13 @@ pub fn morton_benchmark(c: &mut Criterion) {
             }
         })
     });
+    group.bench_function("optimized", |b| {
+        b.iter(|| {
+            for coords in morton::iter_2d() {
+                black_box(coords);
+            }
+        })
+    });
 }
 
 pub fn hilbert_benchmark(c: &mut Criterion) {
@@ -41,6 +48,7 @@ pub fn hilbert_benchmark(c: &mut Criterion) {
             }
         })
     });
+    // TODO: Add optimized Hilbert curve iterator
 }
 
 criterion_group!(benches, morton_benchmark, hilbert_benchmark);

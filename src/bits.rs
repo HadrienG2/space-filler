@@ -11,40 +11,22 @@ pub const fn num_bits<T>() -> NumBits {
 }
 
 /// Generate a mask that selects a certain number of low-order bits: 0000...0011
-///
-/// FIXME: Current algorithm only supports power-of-two lengths.
-///
 #[inline(always)]
 pub const fn low_order_mask(length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
-    // assert!(length.is_power_of_two() && length <= num_bits::<CurveIdx>());
-
-    // Handle zero-sized mask edge case
-    if length == 0 {
-        return 0;
+    // assert!(length <= num_bits::<CurveIdx>());
+    if length < num_bits::<CurveIdx>() {
+        (1 << length) - 1
+    } else {
+        CurveIdx::MAX
     }
-
-    // Generate the mask
-    let mut mask = 0b1;
-    let mut curr_length = 1;
-    while curr_length < length {
-        // Iteration 0: 00...00001
-        // Iteration 1: 00...00011
-        // Iteration 2: 00...01111
-        mask |= mask << curr_length;
-        curr_length *= 2;
-    }
-    mask
 }
 
 /// Generate a mask with an alternating "striped" bit pattern: 00110011...0011
-///
-/// FIXME: Current algorithm only supports power-of-two lengths.
-///
 #[inline(always)]
 pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
     // TODO: Once assert in const is allowed, sanity check input
-    // assert!(length != 0 && length.is_power_of_two() && length < num_bits::<CurveIdx>());
+    // assert!(length != 0 && length < num_bits::<CurveIdx>());
 
     // Generate the stripes
     let mut stripes = low_order_mask(stripe_length);
@@ -62,8 +44,11 @@ pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
 /// Compute the left-to-right inclusive XOR scan of an integer's bits
 ///
 /// Given an integer with bits [ x1 x2 x3 ... ], this produces another integer
-/// with bits [ x1  x1+x2  x1+x2+x3 ... ].
+/// with bits [ x1  x1^x2  x1^x2^x3 ... ].
 ///
+// FIXME: Extract common inclusive/exclusive scan routines once const fn
+//        supports that (requires at least function pointers, ideally traits)
+//
 #[inline(always)]
 pub const fn bitwise_xor_ltr_inclusive_scan(mut bits: Coordinate) -> Coordinate {
     // This is a bitwise implementation of the Hillis/Steele parallel inclusive
@@ -72,8 +57,8 @@ pub const fn bitwise_xor_ltr_inclusive_scan(mut bits: Coordinate) -> Coordinate 
     let mut stride = 1;
     while stride < num_bits::<Coordinate>() {
         // Iteration 0: [ x1     x2        x3           x4           x5 ... ]
-        // Iteration 1: [ x1  x1+x2     x2+x3        x3+x4        x4+x5 ... ]
-        // Iteration 2: [ x1  x1+x2  x1+x2+x3  x1+x2+x3+x4  x2+x3+x4+x5 ... ]
+        // Iteration 1: [ x1  x1^x2     x2^x3        x3^x4        x4^x5 ... ]
+        // Iteration 2: [ x1  x1^x2  x1^x2^x3  x1^x2^x3^x4  x2^x3^x4^x5 ... ]
         bits ^= bits >> stride;
         stride *= 2;
     }
@@ -82,9 +67,12 @@ pub const fn bitwise_xor_ltr_inclusive_scan(mut bits: Coordinate) -> Coordinate 
 
 /// Compute the left-to-right exclusive XOR scan of an integer's bits
 ///
-/// Given an integer with bits [ x1 x2 x3 ... ], this produces another integer
-/// with bits [ 0 x1 x1+x2 ... ].
+/// Given an integer with bits [ x1 x2 x3 x4 ... ], this produces another
+/// integer with bits [ 0  x1  x1^x2  x1^x2^x3 ... ].
 ///
+// FIXME: Extract common inclusive/exclusive scan routines once const fn
+//        supports that (requires at least function pointers, ideally traits)
+//
 #[inline(always)]
 pub const fn bitwise_xor_ltr_exclusive_scan(bits: Coordinate) -> Coordinate {
     bitwise_xor_ltr_inclusive_scan(bits >> 1)
@@ -138,7 +126,7 @@ pub(crate) mod test_utils {
 #[cfg(test)]
 mod tests {
     use super::{test_utils::*, *};
-    use quickcheck::quickcheck;
+    use core::ops::BitXor;
 
     #[test]
     fn num_bits() {
@@ -151,37 +139,54 @@ mod tests {
 
     #[test]
     fn low_order_mask() {
-        assert_eq!(super::low_order_mask(0), 0b0000000000000000);
-        assert_eq!(super::low_order_mask(1), 0b0000000000000001);
-        assert_eq!(super::low_order_mask(2), 0b0000000000000011);
-        assert_eq!(super::low_order_mask(4), 0b0000000000001111);
-        assert_eq!(super::low_order_mask(8), 0b0000000011111111);
-        assert_eq!(super::low_order_mask(16), 0b1111111111111111);
+        let mut expected = 0;
+        for i in 0..=super::num_bits::<CurveIdx>() {
+            assert_eq!(super::low_order_mask(i), expected);
+            push_bit(&mut expected, true);
+        }
     }
 
     #[test]
     fn striped_mask() {
-        assert_eq!(super::striped_mask(1), 0b0101010101010101);
-        assert_eq!(super::striped_mask(2), 0b0011001100110011);
-        assert_eq!(super::striped_mask(4), 0b0000111100001111);
-        assert_eq!(super::striped_mask(8), 0b0000000011111111);
+        let num_bits = super::num_bits::<CurveIdx>();
+        for length in 1..num_bits {
+            let stripe = super::low_order_mask(length);
+            let stripe_length = 2 * length;
+            let mut mask = stripe;
+            for _ in 1..(num_bits / stripe_length) + (num_bits % stripe_length != 0) as NumBits {
+                mask = (mask << stripe_length) | stripe;
+            }
+            assert_eq!(
+                super::striped_mask(length),
+                mask,
+                "Unexpected striped mask for length {}",
+                length
+            );
+        }
+    }
+
+    fn ltr_inclusive_scan(
+        input: Coordinate,
+        op: fn(bool, bool) -> bool,
+        neutral: bool,
+    ) -> Coordinate {
+        let mut input_buf = input.reverse_bits();
+        let mut expected = neutral as Coordinate;
+        for _bit_idx in 0..super::num_bits::<Coordinate>() {
+            let input_bit = pop_bit(&mut input_buf);
+            let new_bit = op(peek_bit(expected), input_bit);
+            push_bit(&mut expected, new_bit);
+        }
+        expected
     }
 
     #[test]
     fn bitwise_xor_ltr_inclusive_scan() {
-        let num_bits = super::num_bits::<Coordinate>();
         for input in 0..=Coordinate::MAX {
-            let mut input_buf = input.reverse_bits();
-            let mut result = 0;
-            for _bit_idx in 0..num_bits {
-                let input_bit = pop_bit(&mut input_buf);
-                let new_bit = peek_bit(result) ^ input_bit;
-                push_bit(&mut result, new_bit);
-            }
             assert_eq!(
                 super::bitwise_xor_ltr_inclusive_scan(input),
-                result,
-                "Unexpected inclusive scan result for input {:08b}",
+                ltr_inclusive_scan(input, bool::bitxor, false),
+                "Unexpected inclusive XOR scan result for input {:08b}",
                 input
             );
         }
@@ -193,7 +198,7 @@ mod tests {
             assert_eq!(
                 super::bitwise_xor_ltr_exclusive_scan(input),
                 super::bitwise_xor_ltr_inclusive_scan(input) >> 1,
-                "Unexpected exclusive scan result for input {:08b}",
+                "Unexpected exclusive XOR scan result for input {:08b}",
                 input
             );
         }
@@ -201,6 +206,7 @@ mod tests {
 
     mod bitwise_swaps {
         use super::*;
+        use quickcheck::quickcheck;
 
         // The iteration space of this exhaustive test is a bit large, so it's not a
         // good idea to run it in debug mode...
