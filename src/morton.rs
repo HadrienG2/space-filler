@@ -11,6 +11,7 @@ use crate::{bits, Coordinates2D, CurveIdx};
 /// a recuring Z-shaped pattern that has reasonable spatial locality properties,
 /// though it does brutally jump from one area of 2D space to another at times.
 ///
+#[inline]
 pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // TODO: Once assert in const is allowed, sanity check types
     // debug_assert!(num_bits::<Coordinate>() >= num_bits::<CurveIdx>() / 2);
