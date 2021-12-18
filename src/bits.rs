@@ -5,16 +5,14 @@ use crate::{Coordinate, CurveIdx, NumBits};
 /// Count the number of bits of an integer
 #[inline(always)]
 pub const fn num_bits<T>() -> NumBits {
-    // TODO: Once assert in const is allowed, sanity check input
-    // assert!(core::mem::size_of<T>() <= NumBits::MAX as usize);
+    assert!(core::mem::size_of::<T>() <= NumBits::MAX as usize);
     (core::mem::size_of::<T>() * 8) as _
 }
 
 /// Generate a mask that selects a certain number of low-order bits: 0000...0011
 #[inline(always)]
 pub const fn low_order_mask(length: NumBits) -> CurveIdx {
-    // TODO: Once assert in const is allowed, sanity check input
-    // assert!(length <= num_bits::<CurveIdx>());
+    assert!(length <= num_bits::<CurveIdx>());
     if length < num_bits::<CurveIdx>() {
         (1 << length) - 1
     } else {
@@ -25,10 +23,7 @@ pub const fn low_order_mask(length: NumBits) -> CurveIdx {
 /// Generate a mask with an alternating "striped" bit pattern: 00110011...0011
 #[inline(always)]
 pub const fn striped_mask(stripe_length: NumBits) -> CurveIdx {
-    // TODO: Once assert in const is allowed, sanity check input
-    // assert!(length != 0 && length < num_bits::<CurveIdx>());
-
-    // Generate the stripes
+    assert!(stripe_length != 0 && stripe_length < num_bits::<CurveIdx>());
     let mut stripes = low_order_mask(stripe_length);
     let mut curr_length = 2 * stripe_length;
     while curr_length < num_bits::<CurveIdx>() {

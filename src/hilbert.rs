@@ -38,9 +38,6 @@ use crate::{bits, morton, Coordinates2D, CurveIdx};
 ///
 #[inline]
 pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
-    // TODO: Once assert in const is allowed, sanity check types
-    // debug_assert!(num_bits::<Coordinate>() >= num_bits::<CurveIdx>() / 2);
-
     // Here's the mathematical derivation of this algorithm.
     //
     // ---
@@ -131,6 +128,7 @@ pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
     // code decoder to separate that index into two integers with bits
     // [ j1 j2 ... jN ] and [ i1 i2 ... iN ].
     //
+    debug_assert!(bits::num_bits::<Coordinates2D>() >= bits::num_bits::<CurveIdx>() / 2);
     let [low_order, high_order] = morton::decode_2d(code);
 
     // From that, we can compute the binary combinations of i-s and j-s that we

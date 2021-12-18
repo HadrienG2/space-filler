@@ -13,12 +13,10 @@ use crate::{bits, Coordinate, Coordinates2D, CurveIdx};
 ///
 #[inline]
 pub const fn decode_2d(code: CurveIdx) -> Coordinates2D {
-    // TODO: Once assert in const is allowed, sanity check types
-    // debug_assert!(num_bits::<Coordinate>() >= num_bits::<CurveIdx>() / 2);
-
     // Align the low-order bits of the two input sub-codes:
     // [ XX x1 XX x2 XX x3 XX x4 ... xN-1   XX xN ]
     // [ XX y1 XX y2 XX y3 XX y4 ... yN-1   XX yN ]
+    debug_assert!(bits::num_bits::<Coordinates2D>() >= bits::num_bits::<CurveIdx>() / 2);
     let mut sub_codes = [code, code >> 1];
     let mut sub_code_idx = 0;
     while sub_code_idx < 2 {
