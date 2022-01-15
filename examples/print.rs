@@ -40,9 +40,7 @@ fn print_hilbert(order: u8) {
     let to_index = |coords: Coordinates2D| {
         assert!(
             coords.iter().all(|&coord| (coord as usize) < coord_range),
-            "Coordinates out of range: {:?} for range {}",
-            coords,
-            coord_range
+            "Coordinates out of range: {coords:?} for range {coord_range}"
         );
         (coords[1] as usize) * (coord_range + 1) + (coords[0] as usize)
     };

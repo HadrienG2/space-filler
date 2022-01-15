@@ -188,8 +188,7 @@ mod tests {
             assert_eq!(
                 super::decode_2d(input),
                 results,
-                "Unexpected 2D Hilbert code decoding result for input {:08b}",
-                input
+                "Unexpected 2D Hilbert code decoding result for input {input:08b}"
             );
         }
     }

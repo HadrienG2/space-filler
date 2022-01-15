@@ -111,8 +111,7 @@ mod tests {
             assert_eq!(
                 super::decode_2d(input),
                 results,
-                "Unexpected 2D Morton code decoding result for input {:08b}",
-                input
+                "Unexpected 2D Morton code decoding result for input {input:08b}"
             );
         }
     }
@@ -145,8 +144,7 @@ mod tests {
                 assert_eq!(
                     coords,
                     super::super::decode_2d(idx),
-                    "Unexpected 2D Morton code iterator output at iteration {}",
-                    iter
+                    "Unexpected 2D Morton code iterator output at iteration {iter}"
                 );
             }
         }

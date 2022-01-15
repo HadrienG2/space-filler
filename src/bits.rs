@@ -154,8 +154,7 @@ mod tests {
             assert_eq!(
                 super::striped_mask(length),
                 mask,
-                "Unexpected striped mask for length {}",
-                length
+                "Unexpected striped mask for length {length}"
             );
         }
     }
@@ -181,8 +180,7 @@ mod tests {
             assert_eq!(
                 super::bitwise_xor_ltr_inclusive_scan(input),
                 ltr_inclusive_scan(input, bool::bitxor, false),
-                "Unexpected inclusive XOR scan result for input {:08b}",
-                input
+                "Unexpected inclusive XOR scan result for input {input:08b}"
             );
         }
     }
@@ -193,8 +191,7 @@ mod tests {
             assert_eq!(
                 super::bitwise_xor_ltr_exclusive_scan(input),
                 super::bitwise_xor_ltr_inclusive_scan(input) >> 1,
-                "Unexpected exclusive XOR scan result for input {:08b}",
-                input
+                "Unexpected exclusive XOR scan result for input {input:08b}"
             );
         }
     }
@@ -248,10 +245,8 @@ mod tests {
             assert_eq!(
                 super::super::bitwise_swaps(mask, src1, src2),
                 results,
-                "Unexpected bitwise swap result for src1={:08b}, src2={:08b}, mask={:08b}",
-                src1,
-                src2,
-                mask
+                "Unexpected bitwise swap result for \
+                 src1={src1:08b}, src2={src2:08b}, mask={mask:08b}"
             );
         }
     }
