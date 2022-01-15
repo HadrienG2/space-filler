@@ -8,7 +8,7 @@ use space_filler::{hilbert, Coordinates2D, CurveIdx};
 // Display a Hilbert curve of specified order
 fn print_hilbert(order: u8) {
     // Print header
-    println!("--- At order {} ---\n", order);
+    println!("--- At order {order} ---\n");
 
     // Compute a Hilbert curve's coordinates
     let coord_range = 2usize.pow(order as u32);
@@ -89,7 +89,7 @@ fn print_hilbert(order: u8) {
 
     // Display the curve
     let display_string = display.into_iter().collect::<String>();
-    println!("{}", display_string);
+    println!("{display_string}");
 }
 
 // Display the Hilbert curve at a few orders
