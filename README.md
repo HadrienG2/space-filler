@@ -16,8 +16,6 @@ publishing this crate for general use:
 - Genericity over the integer type used for curve indexing (currently, the
   algorithms are generic, but the function signatures aren't, const traits and
   matching adaptations of the `num-traits` crates would be needed for that)
-- Assertions that function inputs match algorithmic constraints (good const
-  assertions are largely blocked on availability of const panic)
 
 Also, there is no guarantee at the moment that the compiler will actually
 perform the work at compile time. This would require new compiler optimizer
